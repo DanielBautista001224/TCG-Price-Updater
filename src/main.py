@@ -26,7 +26,7 @@ def main():
         })
     tcg.Close_tcg_player()
     uptade_prices(results)
-    print("Precios actualizados 🚀")
+    print("Precios actualizados")
 
 if __name__ == "__main__":
     main()

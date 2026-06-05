@@ -14,7 +14,7 @@ class TCG_Player:
             url = f"https://www.tcgplayer.com/search/all/product?q={query}&view=grid"
             self.page.goto(url)
             #espera a que cargue la pagina
-            self.page.wait_for_selector(".search-result",timeout=10000)
+            self.page.wait_for_selector(".search-result",timeout=20000)
 
             #revision del precio del primer resultado
             self.page.wait_for_selector("a[data-testid^='product-card__image']",timeout=10000)

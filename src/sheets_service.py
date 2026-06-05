@@ -1,5 +1,11 @@
+import os
+from dotenv import load_dotenv
 import gspread
 from google.oauth2.service_account import Credentials
+
+load_dotenv()
+SHEET_NAME = os.getenv("GOOGLE_SHEET_NAME")
+WORKSHEET_NAME = os.getenv("WORKSHEET_NAME")
 
 def connect_to_sheets():
     scope = [
@@ -18,8 +24,8 @@ def connect_to_sheets():
 
 def get_input_data():
     client = connect_to_sheets()
-    sheet = client.open("pokemon-price-bot")
-    worksheet = sheet.worksheet("Carpeta 1")
+    sheet = client.open(SHEET_NAME)
+    worksheet = sheet.worksheet(WORKSHEET_NAME)
     data = worksheet.get_all_values()
 
     headers = data[2]  
@@ -37,25 +43,21 @@ def get_input_data():
 
 def uptade_prices(data):
     client = connect_to_sheets()
-    sheet = client.open("pokemon-price-bot").worksheet("Carpeta 1")
+    sheet = client.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
 
     headers = sheet.row_values(3)
     col_map = {name: idx for idx, name in enumerate(headers)}
 
-    usd_col = col_map["P.TCGPLAYER"]
-    cop_col = col_map["Precio COP"]
-
-    # Obtener todos los valores actuales
-    all_data = sheet.get_all_values()
-
+    usd_col = col_map["P.TCGPLAYER"]+1
+    requests=[]
     
     for row in data:
-        row_index = row["_row"] - 1  
+        row_number = row["_row"]
 
-        all_data[row_index][usd_col] = row["price_usd"]
-        all_data[row_index][cop_col] = row["price_cop"]
+        requests.append({
+            "range": f"{gspread.utils.rowcol_to_a1(row_number, usd_col)}",
+            "values": [[row["price_usd"]]]
+        })
 
-    
-    sheet.update("A1", all_data, value_input_option="USER_ENTERED")
+    sheet.batch_update(requests, value_input_option="USER_ENTERED")
 
-    print("✅ precios actualizados (modo eficiente)")
