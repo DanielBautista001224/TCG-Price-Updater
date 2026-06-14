@@ -1,13 +1,12 @@
 from playwright.sync_api import sync_playwright
 class TCG_Player:
-    def launch_tcg_player(self):
+    def launch_player(self):
         self.p = sync_playwright().start()
         self.browser = self.p.chromium.launch(headless=False)
         self.page = self.browser.new_page()
         self.page.goto("https://www.tcgplayer.com/")
 
-
-    def get_card_price(self,card_name):
+    def get_tcg_price(self,card_name):
         try: 
             #Busqueda directa por URL
             query = card_name.replace(" ", "+")
@@ -31,8 +30,47 @@ class TCG_Player:
             print(f"❌ Error con '{card_name}': {e}")
             return ("no encontrado")
 
+    def get_colectr_price(self, card_name):
+        try:
+            query = card_name.replace(" ", "+")
+            url = f"https://app.getcollectr.com/?query={query}"
+            self.page.goto(url)
 
+            self.page.wait_for_selector(
+                "div.cursor-pointer:has(span.font-bold)",
+                timeout=15000
+            )
 
-    def Close_tcg_player(self):
+            cards = self.page.locator("div.cursor-pointer:has(span.font-bold)")
+
+            for i in range(cards.count()):
+                card = cards.nth(i)
+
+                # Nombre
+                name = card.locator("span.font-bold").first.inner_text().strip()
+
+                # Precio (solo el que tiene $)
+                price_locator = card.locator("span.font-bold:has-text('$')")
+
+                if price_locator.count() == 0:
+                    continue
+
+                price_text = price_locator.inner_text()
+
+                print("MATCH:")
+                print(name)
+                print(price_text+"\n")
+
+                price = float(price_text.replace("$", "").replace(",", ""))
+
+                return price
+
+            return "no encontrado"
+
+        except Exception as e:
+            print(f"❌ Error con '{card_name}': {e}")
+            return "no encontrado"
+
+    def Close_player(self):
         self.browser.close()
         self.p.stop()

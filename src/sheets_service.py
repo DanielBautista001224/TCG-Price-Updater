@@ -3,61 +3,68 @@ from dotenv import load_dotenv
 import gspread
 from google.oauth2.service_account import Credentials
 
-load_dotenv()
-SHEET_NAME = os.getenv("GOOGLE_SHEET_NAME")
-WORKSHEET_NAME = os.getenv("WORKSHEET_NAME")
 
-def connect_to_sheets():
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
+class SheetsService:
+    def __init__(self):
+        load_dotenv()
 
-    creds = Credentials.from_service_account_file(
-        "credentials.json",
-        scopes=scope
-    )
+        self.sheet_name = os.getenv("GOOGLE_SHEET_NAME", "").strip()
+        self.worksheet_name = os.getenv("WORKSHEET_NAME", "").strip()
 
-    client = gspread.authorize(creds)
-    return client
+        self.client = self._connect()
+        self.sheet = self.client.open(self.sheet_name)
+        self.worksheet = self.sheet.worksheet(self.worksheet_name)
+
+    def _connect(self):
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+
+        creds = Credentials.from_service_account_file(
+            "credentials.json",
+            scopes=scope
+        )
+
+        return gspread.authorize(creds)
+
+    def get_input_data(self):
+        data = self.worksheet.get_all_values()
+
+        headers = data[2]
+        rows = data[3:]
+
+        headers = [h if h != "" else f"col_{i}" for i, h in enumerate(headers)]
+
+        records = []
+        for idx, row in enumerate(rows, start=4):
+            record = dict(zip(headers, row))
+            record["_row"] = idx
+            records.append(record)
+
+        return records
 
 
-def get_input_data():
-    client = connect_to_sheets()
-    sheet = client.open(SHEET_NAME)
-    worksheet = sheet.worksheet(WORKSHEET_NAME)
-    data = worksheet.get_all_values()
+    def update_prices(self, data):
+        headers = self.worksheet.row_values(3)
+        col_map = {name: idx for idx, name in enumerate(headers)}
 
-    headers = data[2]  
-    rows = data[3:]    
-    
-    headers = [h if h != "" else f"col_{i}" for i, h in enumerate(headers)]
-    records = []
+        tcg_col = col_map["P.TCGPLAYER"] + 1
+        colectr_col = col_map["P.COLECTR"] + 1
 
-    for idx, row in enumerate(rows, start=4):  
-        record = dict(zip(headers, row))
-        record["_row"] = idx  
-        records.append(record)
+        requests = []
 
-    return records
+        for row in data:
+            row_number = row["_row"]
 
-def uptade_prices(data):
-    client = connect_to_sheets()
-    sheet = client.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
+            requests.append({
+                "range": gspread.utils.rowcol_to_a1(row_number, tcg_col),
+                "values": [[row["price_tcg"]]]
+            })
 
-    headers = sheet.row_values(3)
-    col_map = {name: idx for idx, name in enumerate(headers)}
+            requests.append({
+                "range": gspread.utils.rowcol_to_a1(row_number, colectr_col),
+                "values": [[row["price_colectr"]]]
+            })
 
-    usd_col = col_map["P.TCGPLAYER"]+1
-    requests=[]
-    
-    for row in data:
-        row_number = row["_row"]
-
-        requests.append({
-            "range": f"{gspread.utils.rowcol_to_a1(row_number, usd_col)}",
-            "values": [[row["price_usd"]]]
-        })
-
-    sheet.batch_update(requests, value_input_option="USER_ENTERED")
-
+        self.worksheet.batch_update(requests,value_input_option="USER_ENTERED")
