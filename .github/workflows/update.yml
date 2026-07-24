@@ -30,6 +30,6 @@ jobs:
       - name: Run script
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          GOOGLE_SHEET_NAME: ${{ secrets.SHEET_NAME }}
+          GOOGLE_SHEET_NAME: ${{ secrets.GOOGLE_SHEET_NAME }}
           WORKSHEET_NAME: ${{ secrets.WORKSHEET_NAME }}
         run: python src/main.py
