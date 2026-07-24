@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import gspread
 from google.oauth2.service_account import Credentials
-
+import json
 
 class SheetsService:
     def __init__(self):
@@ -20,9 +20,15 @@ class SheetsService:
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
+        creds_json = os.getenv("GOOGLE_CREDENTIALS")
 
-        creds = Credentials.from_service_account_file(
-            "credentials.json",
+        if not creds_json:
+            raise ValueError("No se encontró GOOGLE_CREDENTIALS en variables de entorno")
+
+        creds_dict = json.loads(creds_json)
+
+        creds = Credentials.from_service_account_info(
+            creds_dict,
             scopes=scope
         )
 
