@@ -29,6 +29,7 @@ jobs:
 
       - name: Run script
         env:
+          HEADLESS: true
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SHEET_NAME: ${{ secrets.GOOGLE_SHEET_NAME }}
           WORKSHEET_NAME: ${{ secrets.WORKSHEET_NAME }}

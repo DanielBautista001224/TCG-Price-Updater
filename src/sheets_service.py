@@ -11,9 +11,6 @@ class SheetsService:
         self.sheet_name = os.getenv("GOOGLE_SHEET_NAME", "").strip()
         self.worksheet_name = os.getenv("WORKSHEET_NAME", "").strip()
 
-        print("Sheet:", self.sheet_name)
-        print("Worksheet:", self.worksheet_name)
-
         self.client = self._connect()
         self.sheet = self.client.open(self.sheet_name)
         self.worksheet = self.sheet.worksheet(self.worksheet_name)

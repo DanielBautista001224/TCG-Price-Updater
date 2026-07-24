@@ -2,7 +2,12 @@ from playwright.sync_api import sync_playwright
 class TCG_Player:
     def launch_player(self):
         self.p = sync_playwright().start()
-        self.browser = self.p.chromium.launch(headless=False)
+        import os
+
+        headless_mode = os.getenv("HEADLESS", "true").lower() == "true"
+
+        self.browser = self.p.chromium.launch(headless=headless_mode)
+    
         self.page = self.browser.new_page()
         self.page.goto("https://www.tcgplayer.com/")
 
